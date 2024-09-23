@@ -4,6 +4,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class ClientHandler {
     private Server server;
@@ -35,8 +38,11 @@ public class ClientHandler {
                             sendMessage("/exitok");
                             break;
                         }
-                        
-
+                        if (isPrivateMessage(message)) {
+                            String receiverUsername = getUsernameFromMessage(message);
+                            ClientHandler receiverClient = server.getClientByUsername(receiverUsername);
+                            receiverClient.sendMessage("private message: " + message);
+                        };
                     } else {
                         server.broadcastMessage(username + " : " + message);
                     }
@@ -74,5 +80,26 @@ public class ClientHandler {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public boolean isPrivateMessage(String message) {
+        for (ClientHandler client : server.getClients()) {
+            if (getUsernameFromMessage(message).equals(client.getUsername())) return true;
+        }
+
+        return false;
+    }
+
+    private String getUsernameFromMessage(String message) {
+        char[] messageChars = message.toCharArray();
+        StringBuilder username = new StringBuilder();
+        for (int i = 1; i < messageChars.length; i++) {
+            if (!Character.isWhitespace(messageChars[i])) {
+                username.append(messageChars[i]);
+            } else {
+                break;
+            }
+        }
+        return username.toString();
     }
 }
