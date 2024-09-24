@@ -5,6 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Server {
     private int port;
@@ -25,6 +26,18 @@ public class Server {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public synchronized List<ClientHandler> getClients() {return clients;}
+
+    public synchronized ClientHandler getClientByUsername(String username){
+        for (ClientHandler client : clients) {
+            String clientUserName = client.getUsername();
+            if (Objects.equals(clientUserName, username)) {
+                return client;
+            }
+        }
+        return null;
     }
 
     public synchronized void subscribe(ClientHandler clientHandler) {
