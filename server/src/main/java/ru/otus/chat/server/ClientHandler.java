@@ -12,11 +12,14 @@ public class ClientHandler {
     private DataOutputStream out;
 
     private String username;
+    private String userRole;
     private static int userCount = 0;
 
     public String getUsername() {
         return username;
     }
+
+    public String getUserRole() { return userRole; }
 
     public ClientHandler(Server server, Socket socket) throws IOException {
         this.server = server;
@@ -29,16 +32,23 @@ public class ClientHandler {
             try {
                 System.out.println("Клиент подключился ");
                 while (true) {
-                    String message = in.readUTF();
-                    if (message.startsWith("/")) {
-                        if (message.startsWith("/exit")){
+                    String inputText = in.readUTF();
+                    if (inputText.startsWith("/")) {
+                        Message message = parseMessage(inputText);
+
+                        if (inputText.startsWith("/exit")){
                             sendMessage("/exitok");
                             break;
+                        }
+
+                        if (message.getCommand().equals("/kick")) {
+                            String kickingUserUsername = message.getReceiverUsername();
+
                         }
                         
 
                     } else {
-                        server.broadcastMessage(username + " : " + message);
+                        server.broadcastMessage(username + " : " + inputText);
                     }
                 }
             } catch (IOException e) {
