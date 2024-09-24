@@ -57,6 +57,11 @@ public class ClientHandler {
         }
     }
 
+    private Message parseMessage(String inputText) {
+        String[] messageElements = inputText.split(" ", 3);
+        return new Message(messageElements[0], messageElements[1], messageElements[2]);
+    }
+
     public void disconnect(){
         server.unsubscribe(this);
         try {
