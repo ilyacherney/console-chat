@@ -4,9 +4,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class ClientHandler {
     private Server server;
@@ -32,19 +29,21 @@ public class ClientHandler {
             try {
                 System.out.println("Клиент подключился ");
                 while (true) {
-                    String message = in.readUTF();
-                    if (message.startsWith("/")) {
-                        if (message.startsWith("/exit")){
+                    String inputText = in.readUTF();
+                    if (inputText.startsWith("/")) {
+                        if (inputText.startsWith("/exit")){
                             sendMessage("/exitok");
                             break;
                         }
-                        if (isPrivateMessage(message)) {
-                            String receiverUsername = getUsernameFromMessage(message);
+                        Message message = parseMessage(inputText);
+                        if (message.getCommand().equals("/w")){
+                            String receiverUsername = message.getReceiverUsername();
                             ClientHandler receiverClient = server.getClientByUsername(receiverUsername);
-                            receiverClient.sendMessage("private message: " + message);
+                            String messageText = message.getText();
+                            receiverClient.sendMessage("[Private]: " + messageText);
                         };
                     } else {
-                        server.broadcastMessage(username + " : " + message);
+                        server.broadcastMessage(username + " : " + inputText);
                     }
                 }
             } catch (IOException e) {
@@ -82,24 +81,8 @@ public class ClientHandler {
         }
     }
 
-    public boolean isPrivateMessage(String message) {
-        for (ClientHandler client : server.getClients()) {
-            if (getUsernameFromMessage(message).equals(client.getUsername())) return true;
-        }
-
-        return false;
-    }
-
-    private String getUsernameFromMessage(String message) {
-        char[] messageChars = message.toCharArray();
-        StringBuilder username = new StringBuilder();
-        for (int i = 1; i < messageChars.length; i++) {
-            if (!Character.isWhitespace(messageChars[i])) {
-                username.append(messageChars[i]);
-            } else {
-                break;
-            }
-        }
-        return username.toString();
+    private Message parseMessage(String inputText) {
+        String[] messageElements = inputText.split(" ", 3);
+        return new Message(messageElements[0], messageElements[1], messageElements[2]);
     }
 }
