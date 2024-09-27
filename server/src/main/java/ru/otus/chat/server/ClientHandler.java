@@ -29,16 +29,21 @@ public class ClientHandler {
             try {
                 System.out.println("Клиент подключился ");
                 while (true) {
-                    String message = in.readUTF();
-                    if (message.startsWith("/")) {
-                        if (message.startsWith("/exit")){
+                    String inputText = in.readUTF();
+                    if (inputText.startsWith("/")) {
+                        if (inputText.startsWith("/exit")){
                             sendMessage("/exitok");
                             break;
                         }
-                        
-
+                        Message message = parseMessage(inputText);
+                        if (message.getCommand().equals("/w")){
+                            String receiverUsername = message.getReceiverUsername();
+                            ClientHandler receiverClient = server.getClientByUsername(receiverUsername);
+                            String messageText = message.getText();
+                            receiverClient.sendMessage("[Private]: " + messageText);
+                        };
                     } else {
-                        server.broadcastMessage(username + " : " + message);
+                        server.broadcastMessage(username + " : " + inputText);
                     }
                 }
             } catch (IOException e) {
@@ -79,5 +84,10 @@ public class ClientHandler {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private Message parseMessage(String inputText) {
+        String[] messageElements = inputText.split(" ", 3);
+        return new Message(messageElements[0], messageElements[1], messageElements[2]);
     }
 }
