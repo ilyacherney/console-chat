@@ -7,59 +7,36 @@ import java.net.Socket;
 import java.util.Scanner;
 
 public class Client {
-    Socket socket;
-    DataInputStream in;
-    DataOutputStream out;
+    private final String host;
+    private final int port;
+    private final Connection connection;
+    private final MessageSender messageSender;
+    private final MessageReceiver messageReceiver;
+    private final MessageHandler messageHandler;
 
-    public Client() throws IOException {
-        Scanner scanner = new Scanner(System.in);
-        socket = new Socket("localhost", 8189);
-        in = new DataInputStream(socket.getInputStream());
-        out = new DataOutputStream(socket.getOutputStream());
-
-        new Thread(() -> {
-            try {
-                while (true) {
-                    String message = in.readUTF();
-                    if (message.startsWith("/")) {
-                        if (message.startsWith("/exitok")) {
-                            break;
-                        }
-                    } else {
-                        System.out.println(message);
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                disconnect();
-            }
-        }).start();
-
-        while (true) {
-            String message = scanner.nextLine();
-            out.writeUTF(message);
-            if (message.startsWith("/exit")) {
-                break;
-            }
-        }
+    public Client(String host, int port) throws IOException {
+        this.host = host;
+        this.port = port;
+        this.connection = new Connection(this);
+        this.messageSender = new MessageSender(connection.getOutputStream(), this);
+        this.messageHandler = new MessageHandler(this);
+        this.messageReceiver = new MessageReceiver(connection.getInputStream(), messageHandler);
     }
 
-    public void disconnect(){
-        try {
-            in.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            out.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            socket.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public Connection getConnection() {
+        return connection;
+    }
+
+    public MessageReceiver getMessageReceiver() {
+        return messageReceiver;
+    }
+
+    public MessageSender getMessageSender() {
+        return messageSender;
+    }
+
+    public void start() {
+        messageSender.start();
+        messageReceiver.start();
     }
 }
