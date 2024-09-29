@@ -1,65 +1,35 @@
 package ru.otus.chat.client;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import ru.otus.chat.utils.Connection;
+import ru.otus.chat.utils.MessageReceiver;
+
 import java.io.IOException;
-import java.net.Socket;
-import java.util.Scanner;
 
 public class Client {
-    Socket socket;
-    DataInputStream in;
-    DataOutputStream out;
+    private final Connection connection;
+    private final MessageReceiver messageReceiver;
+    private final UserInputListener userInputListener;
+    private final InboundMessageHandlerClientImpl inboundMessageHandler;
 
     public Client() throws IOException {
-        Scanner scanner = new Scanner(System.in);
-        socket = new Socket("localhost", 8189);
-        in = new DataInputStream(socket.getInputStream());
-        out = new DataOutputStream(socket.getOutputStream());
-
-        new Thread(() -> {
-            try {
-                while (true) {
-                    String message = in.readUTF();
-                    if (message.startsWith("/")) {
-                        if (message.startsWith("/exitok")) {
-                            break;
-                        }
-                    } else {
-                        System.out.println(message);
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                disconnect();
-            }
-        }).start();
-
-        while (true) {
-            String message = scanner.nextLine();
-            out.writeUTF(message);
-            if (message.startsWith("/exit")) {
-                break;
-            }
-        }
+        this.connection = new Connection("localhost", 8189);
+        this.inboundMessageHandler = new InboundMessageHandlerClientImpl(this);
+        this.messageReceiver = new MessageReceiver(inboundMessageHandler, connection.getInputStream());
+        this.userInputListener = new UserInputListener(this);
     }
 
-    public void disconnect(){
-        try {
-            in.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            out.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            socket.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public Connection getConnection() {
+        return connection;
+    }
+
+    public void start() {
+        messageReceiver.start();
+        userInputListener.start();
+    }
+
+    public void stop() {
+        messageReceiver.setActive(false);
+        userInputListener.setActive(false);
+        connection.disconnect();
     }
 }
