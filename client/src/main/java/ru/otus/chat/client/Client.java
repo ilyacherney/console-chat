@@ -1,42 +1,35 @@
 package ru.otus.chat.client;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import ru.otus.chat.utils.Connection;
+import ru.otus.chat.utils.MessageReceiver;
+
 import java.io.IOException;
-import java.net.Socket;
-import java.util.Scanner;
 
 public class Client {
-    private final String host;
-    private final int port;
     private final Connection connection;
-    private final MessageSender messageSender;
     private final MessageReceiver messageReceiver;
-    private final MessageHandler messageHandler;
+    private final UserInputListener userInputListener;
+    private final InboundMessageHandlerClientImpl inboundMessageHandler;
 
-    public Client(String host, int port) throws IOException {
-        this.host = host;
-        this.port = port;
-        this.connection = new Connection(this);
-        this.messageSender = new MessageSender(connection.getOutputStream(), this);
-        this.messageHandler = new MessageHandler(this);
-        this.messageReceiver = new MessageReceiver(connection.getInputStream(), messageHandler);
+    public Client() throws IOException {
+        this.connection = new Connection("localhost", 8189);
+        this.inboundMessageHandler = new InboundMessageHandlerClientImpl(this);
+        this.messageReceiver = new MessageReceiver(inboundMessageHandler, connection.getInputStream());
+        this.userInputListener = new UserInputListener(this);
     }
 
     public Connection getConnection() {
         return connection;
     }
 
-    public MessageReceiver getMessageReceiver() {
-        return messageReceiver;
-    }
-
-    public MessageSender getMessageSender() {
-        return messageSender;
-    }
-
     public void start() {
-        messageSender.start();
         messageReceiver.start();
+        userInputListener.start();
+    }
+
+    public void stop() {
+        messageReceiver.setActive(false);
+        userInputListener.setActive(false);
+        connection.disconnect();
     }
 }

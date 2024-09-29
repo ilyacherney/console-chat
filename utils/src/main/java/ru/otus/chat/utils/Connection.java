@@ -1,4 +1,4 @@
-package ru.otus.chat.client;
+package ru.otus.chat.utils;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -6,17 +6,24 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class Connection {
-    private final Client client;
-    private final Socket socket;
-    private final DataInputStream inputStream;
-    private final DataOutputStream outputStream;
+    private Socket socket;
+    private DataInputStream inputStream;
+    private DataOutputStream outputStream;
 
-    public Connection (Client client) throws IOException {
-        this.client = client;
-        this.socket = new Socket("localhost", 8189);
+    public Connection (String host, int port) throws IOException {
+        this.socket = new Socket(host, port);
         this.inputStream = new DataInputStream(socket.getInputStream());
         this.outputStream = new DataOutputStream(socket.getOutputStream());
     }
+
+    public Connection (Socket socket) throws IOException {
+        this.socket = socket;
+        this.inputStream = new DataInputStream(socket.getInputStream());
+        this.outputStream = new DataOutputStream(socket.getOutputStream());
+    }
+
+    public Socket getSocket() {
+        return socket;}
 
     public DataInputStream getInputStream() {
         return inputStream;

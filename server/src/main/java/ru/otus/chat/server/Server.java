@@ -1,5 +1,7 @@
 package ru.otus.chat.server;
 
+import ru.otus.chat.utils.Connection;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -20,8 +22,8 @@ public class Server {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("Сервер запущен на порту: " + port);
             while (true) {
-                Socket socket = serverSocket.accept();
-                subscribe(new ClientHandler(this, socket));
+                Connection connection = new Connection(serverSocket.accept());
+                subscribe(new ClientHandler(this, connection));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -32,7 +34,7 @@ public class Server {
 
     public synchronized ClientHandler getClientByUsername(String username){
         for (ClientHandler client : clients) {
-            String clientUserName = client.getUsername();
+            String clientUserName = client.getUser().getName();
             if (Objects.equals(clientUserName, username)) {
                 return client;
             }
@@ -48,9 +50,9 @@ public class Server {
         clients.remove(clientHandler);
     }
 
-    public synchronized void broadcastMessage(String message) {
+    public synchronized void broadcastMessage(String message) throws IOException {
         for (ClientHandler client : clients) {
-            client.sendMessage(message);
+            client.getMessageSender().send(message);
         }
     }
 }
